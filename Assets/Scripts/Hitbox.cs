@@ -1,23 +1,41 @@
 using UnityEngine;
-using System.Collections;
 
 public class Hitbox : MonoBehaviour
 {
     private Collider hitboxCollider;
-    
-    [Header("Efectos Visuales")]
-    public GameObject hitVFXPrefab; 
+
+    [Header("Combate")]
+    public float damage = 25f;
+    public string targetTag = "Enemy"; 
+
+    [Header("Efectos Visuales y Cámara")]
+    public GameObject hitVFXPrefab;
+    public float shakeDuration = 0.15f;
+    public float shakeMagnitude = 1.5f;
+
+    [Header("Configuración de Hitstop")]
+    public float hitstopDuration = 0.07f;
+    [Range(0f, 1f)] public float hitstopTimeScale = 0.05f;
 
     void Start()
     {
         hitboxCollider = GetComponent<Collider>();
-        hitboxCollider.enabled = false; 
+        if (hitboxCollider != null)
+        {
+            hitboxCollider.enabled = false;
+        }
     }
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy"))
+        if (other.CompareTag(targetTag))
         {
+            Health health = other.GetComponent<Health>();
+            if (health != null)
+            {
+                health.TakeDamage(damage);
+            }
+
             if (hitVFXPrefab != null)
             {
                 Vector3 contactPoint = other.ClosestPoint(transform.position);
@@ -26,28 +44,28 @@ public class Hitbox : MonoBehaviour
 
             if (CameraShake.Instance != null)
             {
-                CameraShake.Instance.Shake(0.15f, 1.5f);
+                CameraShake.Instance.Shake(shakeDuration, shakeMagnitude);
             }
 
-            StartCoroutine(HitStopRoutine(0.05f)); 
-            hitboxCollider.enabled = false;
-        }
-    }
+            if (Hitstop.Instance != null)
+            {
+                Hitstop.Instance.Freeze(hitstopDuration, hitstopTimeScale);
+            }
 
-    IEnumerator HitStopRoutine(float duration)
-    {
-        Time.timeScale = 0.05f; 
-        yield return new WaitForSecondsRealtime(duration); 
-        Time.timeScale = 1f; 
+            if (hitboxCollider != null)
+            {
+                hitboxCollider.enabled = false;
+            }
+        }
     }
 
     public void EnableHitbox()
     {
-        if(hitboxCollider != null) hitboxCollider.enabled = true;
+        if (hitboxCollider != null) hitboxCollider.enabled = true;
     }
 
     public void DisableHitbox()
     {
-        if(hitboxCollider != null) hitboxCollider.enabled = false;
+        if (hitboxCollider != null) hitboxCollider.enabled = false;
     }
 }
